@@ -1,0 +1,9 @@
+[package]
+name = "dvach"
+version = "0.1.0"
+authors = ["TatriX <tatrics@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+reqwest = "0.9.5"
+structopt = "0.2.14"
