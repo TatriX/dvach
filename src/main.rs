@@ -115,8 +115,49 @@ struct Thread {
 
     /// Beginning of the first threads post
     comment: String,
-
 }
 
 /// Print all messages in particular thread.
-fn list_thread(board: &str, thread: usize) {}
+fn list_thread(board: &str, thread: usize) {
+    let url = format!("https://2ch.hk/{}/res/{}.json", board, thread);
+    let response = reqwest::get(&url).expect(&format!("Cannot get thread {}/{}", board, thread));
+    let posts = parse_posts(response).expect("Cannot parse posts");
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    for post in posts {
+        // if output was interrupted, e.g. by piping to `head`, ignore the error
+        let _ = writeln!(handle, "{:>10} {} {}", post.id, post.date, post.comment);
+    }
+}
+
+fn parse_posts(reader: impl Read) -> serde_json::Result<Vec<Post>> {
+    /// Posts list response
+    #[derive(Deserialize)]
+    struct Posts {
+        threads: Vec<Threads>,
+    }
+
+    /// Actual posts wrapper
+    #[derive(Deserialize)]
+    struct Threads {
+        posts: Vec<Post>
+    }
+
+    let wrapper: Posts = serde_json::from_reader(reader)?;
+    // Here I'm expecting threads[0] to be always present. It will panic otherwise.
+    Ok(wrapper.threads.into_iter().next().expect("threads must be present").posts)
+}
+
+
+#[derive(Deserialize)]
+struct Post {
+    #[serde(rename = "num")]
+    id: usize,
+
+    /// Post content
+    comment: String,
+
+    /// Post date string
+    date: String,
+}
