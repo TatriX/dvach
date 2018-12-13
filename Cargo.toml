@@ -3,6 +3,13 @@ name = "dvach"
 version = "0.1.0"
 authors = ["TatriX <tatrics@gmail.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "dvach a simple client cli tool for the 2ch.hk imageboard"
+readme = "README.md"
+homepage = "https://github.com/TatriX/dvach"
+repository = "https://github.com/TatriX/dvach"
+keywords = ["cli", "2ch.hk", "2ch", "imageboard"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 reqwest = "0.9.5"
