@@ -7,6 +7,8 @@
 //! $ dvach pr 1299618 # show selected thread
 //! ```
 
+use env_logger;
+use log::debug;
 use reqwest;
 use scraper::Html;
 use serde_derive::Deserialize;
@@ -14,9 +16,6 @@ use serde_json;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use structopt::StructOpt;
-use log::debug;
-use env_logger;
-
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -57,13 +56,21 @@ fn list_boards() {
     let mut handle = stdout.lock();
     for board in boards {
         // if output was interrupted, e.g. by piping to `head`, ignore the error
-        let _ = writeln!(handle, "{:>10} {:20} {}", board.id, board.category, board.name);
+        let _ = writeln!(
+            handle,
+            "{:>10} {:20} {}",
+            board.id, board.category, board.name
+        );
     }
 }
 
 fn parse_boards(reader: impl Read) -> serde_json::Result<Vec<Board>> {
     let wrapper: HashMap<String, Vec<Board>> = serde_json::from_reader(reader)?;
-    Ok(wrapper.into_iter().map(|(_, boards)| boards).flatten().collect())
+    Ok(wrapper
+        .into_iter()
+        .map(|(_, boards)| boards)
+        .flatten()
+        .collect())
 }
 
 #[derive(Deserialize, Debug)]
@@ -80,7 +87,7 @@ struct Board {
 
 /// Print all available threads for the board.
 fn list_threads(board: &str) {
-    let url = format!("https://2ch.hk/{}/catalog.json", board) ;
+    let url = format!("https://2ch.hk/{}/catalog.json", board);
     let response = reqwest::get(&url).expect(&format!("Cannot get threads for {}", board));
     let threads = parse_threads(response).expect("Cannot parse threads");
 
@@ -88,7 +95,11 @@ fn list_threads(board: &str) {
     let mut handle = stdout.lock();
     for thread in threads {
         // if output was interrupted, e.g. by piping to `head`, ignore the error
-        let _ = writeln!(handle, "{:>10} {:30} {:.80}", thread.id, thread.subject, thread.comment);
+        let _ = writeln!(
+            handle,
+            "{:>10} {:30} {:.80}",
+            thread.id, thread.subject, thread.comment
+        );
     }
 }
 
@@ -96,13 +107,12 @@ fn parse_threads(reader: impl Read) -> serde_json::Result<Vec<Thread>> {
     /// Thread list response
     #[derive(Deserialize, Debug)]
     struct Threads {
-        threads: Vec<Thread>
+        threads: Vec<Thread>,
     }
 
     let wrapper: Threads = serde_json::from_reader(reader)?;
     Ok(wrapper.threads)
 }
-
 
 /// Thread from the list of threads
 #[derive(Deserialize, Debug)]
@@ -128,13 +138,23 @@ fn list_thread(board: &str, thread: usize) {
     let mut handle = stdout.lock();
     for post in posts {
         // if output was interrupted, e.g. by piping to `head`, ignore the error
-        let _ = writeln!(handle, "#{} {}\n{}\n", post.id, post.date, parse_comment(&post.comment));
+        let _ = writeln!(
+            handle,
+            "#{} {}\n{}\n",
+            post.id,
+            post.date,
+            parse_comment(&post.comment)
+        );
     }
 }
 
 fn parse_comment(comment: &str) -> String {
     let fragment = Html::parse_fragment(comment);
-    fragment.root_element().text().collect::<Vec<_>>().join("\n")
+    fragment
+        .root_element()
+        .text()
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn parse_posts(reader: impl Read) -> serde_json::Result<Vec<Post>> {
@@ -147,14 +167,18 @@ fn parse_posts(reader: impl Read) -> serde_json::Result<Vec<Post>> {
     /// Actual posts wrapper
     #[derive(Deserialize)]
     struct Threads {
-        posts: Vec<Post>
+        posts: Vec<Post>,
     }
 
     let wrapper: Posts = serde_json::from_reader(reader)?;
     // Here I'm expecting threads[0] to be always present. It will panic otherwise.
-    Ok(wrapper.threads.into_iter().next().expect("threads must be present").posts)
+    Ok(wrapper
+        .threads
+        .into_iter()
+        .next()
+        .expect("threads must be present")
+        .posts)
 }
-
 
 #[derive(Deserialize)]
 struct Post {
