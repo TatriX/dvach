@@ -51,7 +51,7 @@ fn main() {
 /// Print all available boards.
 ///
 /// This function uses "mobile" API, because there is no "list boards"
-/// functionality in the "json" API. At least I didn't find one.
+/// functionality in the JSON API. At least I haven't found one.
 fn list_boards() {
     // this is hardcoded for now
     const URL: &str = "https://2ch.hk/makaba/mobile.fcgi?task=get_boards";
@@ -70,6 +70,7 @@ fn list_boards() {
     }
 }
 
+/// Parse boards from JSON API response.
 fn parse_boards(reader: impl Read) -> serde_json::Result<Vec<Board>> {
     let wrapper: HashMap<String, Vec<Board>> = serde_json::from_reader(reader)?;
     Ok(wrapper
@@ -114,6 +115,7 @@ fn list_threads(board: &str, comment_width: usize) {
     }
 }
 
+/// Parse comment from html and return it's first line.
 fn parse_thread_comment(comment: &str) -> String {
     let fragment = Html::parse_fragment(comment);
     fragment
@@ -124,6 +126,7 @@ fn parse_thread_comment(comment: &str) -> String {
         .unwrap_or_else(String::new)
 }
 
+/// Parse threads from JSON API response.
 fn parse_threads(reader: impl Read) -> serde_json::Result<Vec<Thread>> {
     /// Thread list response
     #[derive(Deserialize, Debug)]
@@ -169,6 +172,7 @@ fn list_thread(board: &str, thread: usize, comment_width: usize) {
     }
 }
 
+/// Parse posts's comment from html and return lines joined with newline
 fn parse_comment(comment: &str) -> String {
     let fragment = Html::parse_fragment(comment);
     fragment
@@ -178,6 +182,7 @@ fn parse_comment(comment: &str) -> String {
         .join("\n")
 }
 
+/// Parse posts from JSON API response
 fn parse_posts(reader: impl Read) -> serde_json::Result<Vec<Post>> {
     /// Posts list response
     #[derive(Deserialize)]
