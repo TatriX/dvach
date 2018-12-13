@@ -13,7 +13,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use structopt::StructOpt;
-use log::{info, debug};
+use log::debug;
 use env_logger;
 
 
@@ -78,7 +78,45 @@ struct Board {
 }
 
 /// Print all available threads for the board.
-fn list_threads(board: &str) {}
+fn list_threads(board: &str) {
+    let url = format!("https://2ch.hk/{}/catalog.json", board) ;
+    let response = reqwest::get(&url).expect(&format!("Cannot get threads for {}", board));
+    let threads = parse_threads(response).expect("Cannot parse threads");
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    for thread in threads {
+        // if output was interrupted, e.g. by piping to `head`, ignore the error
+        let _ = writeln!(handle, "{:>10} {:30} {:.80}", thread.id, thread.subject, thread.comment);
+    }
+}
+
+fn parse_threads(reader: impl Read) -> serde_json::Result<Vec<Thread>> {
+    /// Thread list response
+    #[derive(Deserialize, Debug)]
+    struct Threads {
+        threads: Vec<Thread>
+    }
+
+    let wrapper: Threads = serde_json::from_reader(reader)?;
+    Ok(wrapper.threads)
+}
+
+
+/// Thread from the list of threads
+#[derive(Deserialize, Debug)]
+struct Thread {
+    /// Thread id
+    #[serde(rename = "num")]
+    id: String,
+
+    /// Thread subject
+    subject: String,
+
+    /// Beginning of the first threads post
+    comment: String,
+
+}
 
 /// Print all messages in particular thread.
 fn list_thread(board: &str, thread: usize) {}
