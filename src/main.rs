@@ -13,6 +13,8 @@ use serde_json;
 use std::collections::HashMap;
 use std::io::Read;
 use structopt::StructOpt;
+use log::{info, debug};
+use env_logger;
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -25,8 +27,10 @@ struct Cli {
 }
 
 fn main() {
+    env_logger::init();
+
     let args = Cli::from_args();
-    println!("Got args: {:#?}", &args);
+    debug!("Got args: {:#?}", &args);
 
     // run appropriate action based on cli arguments
     match (args.board, args.thread) {
