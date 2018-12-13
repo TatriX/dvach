@@ -16,6 +16,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use structopt::StructOpt;
+use textwrap::fill;
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -25,6 +26,10 @@ struct Cli {
 
     /// Thread to show
     thread: Option<usize>,
+
+    /// Width of the comment in posts before wrapping
+    #[structopt(short = "w", long = "comment-width", default_value = "80")]
+    comment_width: usize
 }
 
 fn main() {
@@ -37,7 +42,7 @@ fn main() {
     match (args.board, args.thread) {
         (None, None) => list_boards(),
         (Some(board), None) => list_threads(&board),
-        (Some(board), Some(thread)) => list_thread(&board, thread),
+        (Some(board), Some(thread)) => list_thread(&board, thread, args.comment_width),
         _ => Cli::clap().print_help().expect("Cannot print help"),
     }
 }
@@ -129,7 +134,7 @@ struct Thread {
 }
 
 /// Print all messages in particular thread.
-fn list_thread(board: &str, thread: usize) {
+fn list_thread(board: &str, thread: usize, comment_width: usize) {
     let url = format!("https://2ch.hk/{}/res/{}.json", board, thread);
     let response = reqwest::get(&url).expect(&format!("Cannot get thread {}/{}", board, thread));
     let posts = parse_posts(response).expect("Cannot parse posts");
@@ -143,7 +148,7 @@ fn list_thread(board: &str, thread: usize) {
             "#{} {}\n{}\n",
             post.id,
             post.date,
-            parse_comment(&post.comment)
+            fill(&parse_comment(&post.comment), comment_width)
         );
     }
 }
