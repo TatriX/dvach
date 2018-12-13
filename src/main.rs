@@ -18,12 +18,10 @@ use structopt::StructOpt;
 macro_rules! println {
     ($fmt:expr, $($args:tt)*) => {
         {
-            use std::io::{self, Write};
+            use std::io::{stdout, Write};
             use std::process::exit;
 
-            let stdout = io::stdout();
-            let mut handle = stdout.lock();
-            if writeln!(handle, $fmt, $($args)*).is_err() {
+            if writeln!(&mut stdout(), $fmt, $($args)*).is_err() {
                 exit(1);
             }
         }
