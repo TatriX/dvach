@@ -7,6 +7,7 @@
 //! $ dvach pr 1299618 # show selected thread
 //! ```
 
+use colored::*;
 use env_logger;
 use log::debug;
 use reqwest;
@@ -16,7 +17,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use structopt::StructOpt;
-use textwrap::fill;
+use textwrap::{fill, indent};
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -29,7 +30,7 @@ struct Cli {
 
     /// Width of the comment in posts before wrapping
     #[structopt(short = "w", long = "comment-width", default_value = "80")]
-    comment_width: usize
+    comment_width: usize,
 }
 
 fn main() {
@@ -41,7 +42,7 @@ fn main() {
     // run appropriate action based on cli arguments
     match (args.board, args.thread) {
         (None, None) => list_boards(),
-        (Some(board), None) => list_threads(&board),
+        (Some(board), None) => list_threads(&board, args.comment_width),
         (Some(board), Some(thread)) => list_thread(&board, thread, args.comment_width),
         _ => Cli::clap().print_help().expect("Cannot print help"),
     }
@@ -91,7 +92,7 @@ struct Board {
 }
 
 /// Print all available threads for the board.
-fn list_threads(board: &str) {
+fn list_threads(board: &str, comment_width: usize) {
     let url = format!("https://2ch.hk/{}/catalog.json", board);
     let response = reqwest::get(&url).expect(&format!("Cannot get threads for {}", board));
     let threads = parse_threads(response).expect("Cannot parse threads");
@@ -102,10 +103,25 @@ fn list_threads(board: &str) {
         // if output was interrupted, e.g. by piping to `head`, ignore the error
         let _ = writeln!(
             handle,
-            "{:>10} {:30} {:.80}",
-            thread.id, thread.subject, thread.comment
+            "{} {}\n{}",
+            format!("{}", thread.id).blue(),
+            thread.subject,
+            indent(
+                &fill(&parse_thread_comment(&thread.comment), comment_width),
+                "  "
+            ),
         );
     }
+}
+
+fn parse_thread_comment(comment: &str) -> String {
+    let fragment = Html::parse_fragment(comment);
+    fragment
+        .root_element()
+        .text()
+        .next()
+        .map(Into::into)
+        .unwrap_or_else(String::new)
 }
 
 fn parse_threads(reader: impl Read) -> serde_json::Result<Vec<Thread>> {
@@ -145,10 +161,10 @@ fn list_thread(board: &str, thread: usize, comment_width: usize) {
         // if output was interrupted, e.g. by piping to `head`, ignore the error
         let _ = writeln!(
             handle,
-            "#{} {}\n{}\n",
-            post.id,
-            post.date,
-            fill(&parse_comment(&post.comment), comment_width)
+            "{} {}\n{}",
+            format!("{}", post.id).blue(),
+            post.date.green(),
+            indent(&fill(&parse_comment(&post.comment), comment_width), "  "),
         );
     }
 }
