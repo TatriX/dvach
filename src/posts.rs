@@ -12,9 +12,10 @@ pub fn list_posts(board: &str, thread: usize, comment_width: usize) {
 
     for post in posts {
         println!(
-            "{} {}\n{}",
+            "{} {}{}\n{}",
             format!("{}", post.id).blue(),
             post.date.green(),
+            format_images(&post.images),
             indent(&fill(&parse_comment(&post.comment), comment_width), "  "),
         );
     }
@@ -64,4 +65,36 @@ struct Post {
 
     /// Post date string
     date: String,
+
+    /// Post images
+    #[serde(rename = "files")]
+    images: Vec<Image>
+}
+
+
+#[derive(Deserialize)]
+struct Image {
+    /// Imageboard generate image name
+    name: String,
+
+    /// Image original full namme
+    fullname: String,
+
+    /// Relative path to a full image
+    path: String,
+}
+
+fn format_images(images: &Vec<Image>) -> String {
+    if images.is_empty() {
+        return "".into();
+    }
+    format!("\n  {}", images.iter().map(format_image).collect::<Vec<_>>().join("\n"))
+}
+
+fn format_image(image: &Image) -> String {
+    format!("{}\n  dvach --download {} > {name} && xdg-open {name}\n  ",
+            image.fullname.yellow(),
+            image.path,
+            name = image.name,
+    )
 }

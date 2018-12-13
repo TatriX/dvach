@@ -33,10 +33,12 @@ macro_rules! println {
 mod boards;
 mod posts;
 mod threads;
+mod download;
 
 use self::boards::list_boards;
 use self::posts::list_posts;
 use self::threads::list_threads;
+use self::download::download;
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -50,6 +52,14 @@ struct Cli {
     /// Width of the comment in posts before wrapping
     #[structopt(short = "w", long = "comment-width", default_value = "80")]
     comment_width: usize,
+
+    /// Default imageboard url
+    #[structopt(long = "base-url", default_value = "https://2ch.hk")]
+    base_url: String,
+
+    /// Width of the comment in posts before wrapping
+    #[structopt(long = "download")]
+    download: Option<String>,
 }
 
 fn main() {
@@ -58,7 +68,13 @@ fn main() {
     let args = Cli::from_args();
     debug!("Got args: {:#?}", &args);
 
-    // run appropriate action based on cli arguments
+    // get thumb or full image
+    if let Some(path) = args.download {
+        download(&args.base_url, &path);
+        return
+    }
+
+    // run appropriate list action based on cli arguments
     match (args.board, args.thread) {
         (None, None) => list_boards(),
         (Some(board), None) => list_threads(&board, args.comment_width),
