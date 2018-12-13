@@ -11,10 +11,11 @@ use reqwest;
 use serde_derive::Deserialize;
 use serde_json;
 use std::collections::HashMap;
-use std::io::Read;
+use std::io::{self, Read, Write};
 use structopt::StructOpt;
 use log::{info, debug};
 use env_logger;
+
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -51,8 +52,11 @@ fn list_boards() {
     let response = reqwest::get(URL).expect("Cannot get boards");
     let boards = parse_boards(response).expect("Cannot parse boards");
 
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
     for board in boards {
-        println!("{:>10} {:20} {} ", board.id, board.category, board.name);
+        // if output was interrupted, e.g. by piping to `head`, ignore the error
+        let _ = writeln!(handle, "{:>10} {:20} {}", board.id, board.category, board.name);
     }
 }
 
