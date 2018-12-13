@@ -8,6 +8,7 @@
 //! ```
 
 use reqwest;
+use scraper::Html;
 use serde_derive::Deserialize;
 use serde_json;
 use std::collections::HashMap;
@@ -127,8 +128,13 @@ fn list_thread(board: &str, thread: usize) {
     let mut handle = stdout.lock();
     for post in posts {
         // if output was interrupted, e.g. by piping to `head`, ignore the error
-        let _ = writeln!(handle, "{:>10} {} {}", post.id, post.date, post.comment);
+        let _ = writeln!(handle, "#{} {}\n{}\n", post.id, post.date, parse_comment(&post.comment));
     }
+}
+
+fn parse_comment(comment: &str) -> String {
+    let fragment = Html::parse_fragment(comment);
+    fragment.root_element().text().collect::<Vec<_>>().join("\n")
 }
 
 fn parse_posts(reader: impl Read) -> serde_json::Result<Vec<Post>> {
