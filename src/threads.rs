@@ -6,11 +6,7 @@ use textwrap::{fill, indent};
 
 /// Print all available threads for the board.
 pub fn list_threads(board: &str, comment_width: usize) {
-    let url = format!("https://2ch.hk/{}/catalog.json", board);
-    let response = reqwest::get(&url).expect(&format!("Cannot get threads for {}", board));
-    let threads = parse_threads(response).expect("Cannot parse threads");
-
-    for thread in threads {
+    for thread in get_threads(board) {
         println!(
             "{} {}\n{}",
             format!("{}", thread.id).blue(),
@@ -23,8 +19,15 @@ pub fn list_threads(board: &str, comment_width: usize) {
     }
 }
 
+/// Get a vec of threads.
+pub fn get_threads(board: &str) -> Vec<Thread> {
+    let url = format!("https://2ch.hk/{}/catalog.json", board);
+    let response = reqwest::get(&url).expect(&format!("Cannot get threads for {}", board));
+    parse_threads(response).expect("Cannot parse threads")
+}
+
 /// Parse comment from html and return it's first line.
-fn parse_thread_comment(comment: &str) -> String {
+pub fn parse_thread_comment(comment: &str) -> String {
     let fragment = Html::parse_fragment(comment);
     fragment
         .root_element()
@@ -48,14 +51,14 @@ fn parse_threads(reader: impl Read) -> serde_json::Result<Vec<Thread>> {
 
 /// Thread from the list of threads
 #[derive(Deserialize, Debug)]
-struct Thread {
+pub struct Thread {
     /// Thread id
     #[serde(rename = "num")]
-    id: String,
+    pub id: String,
 
     /// Thread subject
-    subject: String,
+    pub subject: String,
 
     /// Beginning of the first threads post
-    comment: String,
+    pub comment: String,
 }
