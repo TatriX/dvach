@@ -2,7 +2,9 @@
 //!
 //! Usage: dvach [board] [thread]
 //! ```
-//! $ dvach # list boards
+//! $ dvach # run tui
+//!
+//! $ dvach . # list boards
 //! $ dvach pr # list threads for the "pr" board
 //! $ dvach pr 1299618 # show selected thread
 //! ```
@@ -29,14 +31,16 @@ macro_rules! println {
 }
 
 mod boards;
+mod download;
 mod posts;
 mod threads;
-mod download;
+mod tui;
 
 use self::boards::list_boards;
+use self::download::download;
 use self::posts::list_posts;
 use self::threads::list_threads;
-use self::download::download;
+use self::tui::init_tui;
 
 /// Represent available cli args
 #[derive(StructOpt, Debug)]
@@ -69,12 +73,13 @@ fn main() {
     // get thumb or full image
     if let Some(path) = args.download {
         download(&args.base_url, &path);
-        return
+        return;
     }
 
     // run appropriate list action based on cli arguments
     match (args.board, args.thread) {
-        (None, None) => list_boards(),
+        (None, None) => init_tui(),
+        (Some(ref board), None) if board == "." => list_boards(),
         (Some(board), None) => list_threads(&board, args.comment_width),
         (Some(board), Some(thread)) => list_posts(&board, thread, args.comment_width),
         _ => Cli::clap().print_help().expect("Cannot print help"),

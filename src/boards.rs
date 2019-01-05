@@ -3,18 +3,23 @@ use std::collections::HashMap;
 use std::io::Read;
 
 /// Print all available boards.
+pub fn list_boards() {
+    for board in get_boards() {
+        println!("{:>10} {:20} {}", board.id, board.category, board.name);
+    }
+}
+
+/// Get a vec of all available boards.
 ///
 /// This function uses "mobile" API, because there is no "list boards"
 /// functionality in the JSON API. At least I haven't found one.
-pub fn list_boards() {
+///
+/// Note: this function will panic on any error.
+pub fn get_boards() -> Vec<Board> {
     // this is hardcoded for now
     const URL: &str = "https://2ch.hk/makaba/mobile.fcgi?task=get_boards";
     let response = reqwest::get(URL).expect("Cannot get boards");
-    let boards = parse_boards(response).expect("Cannot parse boards");
-
-    for board in boards {
-        println!("{:>10} {:20} {}", board.id, board.category, board.name);
-    }
+    parse_boards(response).expect("Cannot parse boards")
 }
 
 /// Parse boards from JSON API response.
@@ -28,13 +33,13 @@ fn parse_boards(reader: impl Read) -> serde_json::Result<Vec<Board>> {
 }
 
 #[derive(Deserialize, Debug)]
-struct Board {
+pub struct Board {
     /// Board id, like "pr" or "b".
-    id: String,
+    pub id: String,
 
     /// Board's category
-    category: String,
+    pub category: String,
 
     /// Name of the board
-    name: String,
+    pub name: String,
 }

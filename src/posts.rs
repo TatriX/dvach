@@ -6,11 +6,7 @@ use textwrap::{fill, indent};
 
 /// Print all messages in particular thread.
 pub fn list_posts(board: &str, thread: usize, comment_width: usize) {
-    let url = format!("https://2ch.hk/{}/res/{}.json", board, thread);
-    let response = reqwest::get(&url).expect(&format!("Cannot get thread {}/{}", board, thread));
-    let posts = parse_posts(response).expect("Cannot parse posts");
-
-    for post in posts {
+    for post in get_posts(board, thread) {
         println!(
             "{} {}{}\n{}",
             format!("{}", post.id).blue(),
@@ -21,8 +17,15 @@ pub fn list_posts(board: &str, thread: usize, comment_width: usize) {
     }
 }
 
+/// Get a vec of posts.
+pub fn get_posts(board: &str, thread: usize) -> Vec<Post> {
+    let url = format!("https://2ch.hk/{}/res/{}.json", board, thread);
+    let response = reqwest::get(&url).expect(&format!("Cannot get thread {}/{}", board, thread));
+    parse_posts(response).expect("Cannot parse posts")
+}
+
 /// Parse posts's comment from html and return lines joined with newline
-fn parse_comment(comment: &str) -> String {
+pub fn parse_comment(comment: &str) -> String {
     let fragment = Html::parse_fragment(comment);
     fragment
         .root_element()
@@ -56,45 +59,52 @@ fn parse_posts(reader: impl Read) -> serde_json::Result<Vec<Post>> {
 }
 
 #[derive(Deserialize)]
-struct Post {
+pub struct Post {
     #[serde(rename = "num")]
-    id: usize,
+    pub id: usize,
 
     /// Post content
-    comment: String,
+    pub comment: String,
 
     /// Post date string
-    date: String,
+    pub date: String,
 
     /// Post images
     #[serde(rename = "files")]
-    images: Vec<Image>
+    pub images: Vec<Image>,
 }
 
-
 #[derive(Deserialize)]
-struct Image {
+pub struct Image {
     /// Imageboard generate image name
-    name: String,
+    pub name: String,
 
     /// Image original full namme
-    fullname: String,
+    pub fullname: String,
 
     /// Relative path to a full image
-    path: String,
+    pub path: String,
 }
 
 fn format_images(images: &Vec<Image>) -> String {
     if images.is_empty() {
         return "".into();
     }
-    format!("\n  {}", images.iter().map(format_image).collect::<Vec<_>>().join("\n"))
+    format!(
+        "\n  {}",
+        images
+            .iter()
+            .map(format_image)
+            .collect::<Vec<_>>()
+            .join("\n")
+    )
 }
 
 fn format_image(image: &Image) -> String {
-    format!("{}\n  dvach --download {} > {name} && xdg-open {name}\n  ",
-            image.fullname.yellow(),
-            image.path,
-            name = image.name,
+    format!(
+        "{}\n  dvach --download {} > {name} && xdg-open {name}\n  ",
+        image.fullname.yellow(),
+        image.path,
+        name = image.name,
     )
 }
