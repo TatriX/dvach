@@ -1,6 +1,6 @@
 [package]
 name = "dvach"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["TatriX <tatrics@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -12,14 +12,14 @@ keywords = ["cli", "2ch", "imageboard"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-reqwest = "0.9.5"
-structopt = "0.2.14"
-serde = "1.0.82"
-serde_json = "1.0.33"
-serde_derive = "1.0.82"
-log = "0.4.6"
-env_logger = "0.6.0"
-scraper = "0.9.0"
+reqwest = "0.9.22"
+structopt = "0.3.5"
+serde = "1.0.103"
+serde_json = "1.0.42"
+serde_derive = "1.0.103"
+log = "0.4.8"
+env_logger = "0.7.1"
+scraper = "0.11.0"
 textwrap = "0.11.0"
-colored = "1.6.1"
-cursive = "0.10.0"
+colored = "1.9.0"
+cursive = "0.13.0"

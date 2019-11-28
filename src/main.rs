@@ -11,8 +11,6 @@
 
 use env_logger;
 use log::debug;
-use reqwest;
-use serde_json;
 use structopt::StructOpt;
 
 /// Custom println! version which exits cleanly when output was
